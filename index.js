@@ -4,23 +4,26 @@ const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, Perm
 
 //other dependencies
 const fs = require("fs");
-const Jimp = require("jimp");
-const request = require(`request`);
+const https = require('https');
+//const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.000";
+const version = "1.001";
 
 //download database from a url and set it to the save variable
-function download(url, size){
-    request.get(url)
-        .on('error', console.error)
-        .pipe(fs.createWriteStream('./database.txt'));
-        setTimeout(() => {
+function download(url){
+    let file = fs.createWriteStream('./database.txt');
+    let request = https.get(url, function(response) {
+        response.pipe(file);
+        //downloading finished
+        file.on("finish", () => {
+            file.close();
             getText = fs.readFileSync("./database.txt", "utf-8");
             save = JSON.parse(getText);
             database_init = true;
             console.log('Database initialized');
-        }, 3000);
+        });
+    });
 }
 
 let save = "{}";
@@ -38,12 +41,13 @@ function string_JSON() {
 }
 
 //save data
-function database_send() {
+/*function database_send() {
     var finaltext = "";
     finaltext = JSON.stringify(save);
     var atc = new AttachmentBuilder(Buffer.from(finaltext, 'utf-8'), { name: 'database.txt' });
     client.channels.cache.get(database_channel).send({files:[atc]});
-}
+}*/
+
 
 //intents
 const client = new Client({
@@ -52,7 +56,7 @@ const client = new Client({
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMessageReactions,
 	],
 });
 
@@ -66,7 +70,7 @@ client.once(Events.ClientReady, (a) => {
         messages.forEach(curmessage => {
         _url = Array.from(curmessage.attachments)[0][1].attachment;
         _size = Array.from(curmessage.attachments)[0][1].size;
-        download(_url, _size);
+        download(_url);
         });
     });
 
@@ -568,3 +572,15 @@ client.on(Events.MessageCreate, (msg) => {
 
 client.login(bot_token);
 console.log("bot login...");
+
+//server
+const http = require('http');
+
+const requestListener = function (req, res) {
+    res.writeHead(200)
+    res.end('server on')
+}
+
+const server = http.createServer(requestListener)
+server.listen(8080)
+console.log('server listening')
