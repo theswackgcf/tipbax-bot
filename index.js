@@ -5,10 +5,10 @@ const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, Perm
 //other dependencies
 const fs = require("fs");
 const https = require('https');
-//const Jimp = require("jimp");
+const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.002";
+const version = "1.003";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -117,6 +117,15 @@ client.once(Events.ClientReady, (a) => {
         "Mothin'",
         "bvithõ",
         "Bill Gates Photo",
+        "Windows 95",
+        "Nintendo Shitcube",
+        "Lego Island",
+        "Tetris 2000",
+        "Crackhead Simulator",
+        "Breaking Bad DS",
+        "Earthworm Jim 3",
+        "New Super Mario CBT",
+        "CBT Wizard"
     ];
 
     let rand_act = 0;
@@ -138,6 +147,9 @@ client.once(Events.ClientReady, (a) => {
 let prefix = 'tipbax';
 
 client.on(Events.MessageCreate, (msg) => {
+    //in dm
+    if(msg.channel.type == 'dm') return;
+
     //user is not bot
     if(!msg.author.bot){
         if(!database_init) return;
@@ -147,6 +159,7 @@ client.on(Events.MessageCreate, (msg) => {
         if(!save[msg.guild.id]){
             save[msg.guild.id] = {
                 words: [],
+                pictures: [],
                 channels: [],
                 interval: 5,
                 listening: false,
@@ -162,6 +175,19 @@ client.on(Events.MessageCreate, (msg) => {
                 var arggs = args;
                 arggs = arggs.filter(n => n != `<@${client.user.id}>`);
                 arggs = arggs.filter(n => n != `<@!${client.user.id}>`);
+
+                //attachments
+                if(msg.attachments.size > 0){
+                    for(var i = 0; i < msg.attachments.size; i++){
+                        if(msg.attachments[i][0].type == "image/png" || msg.attachments[i][0].type == "image/jpg" || msg.attachments[i][0].type == "image/jpeg"){
+                            cursave.pictures[cursave.pictures.length] = msg.attachments[i][0].url;
+                        }
+                    }
+                    //if too many, remove older pictures
+                    if(cursave.pictures.length > 50){
+                        cursave.pictures = cursave.pictures.slice(-50);
+                    }
+                }
 
                 var mode = Math.floor(Math.random()*4);
                 //0 = one word from message
@@ -248,23 +274,64 @@ client.on(Events.MessageCreate, (msg) => {
                 finalstring = finalstring.filter(n => n != '');
                 
                 var msgReply = '';
+                var sendPicture = false;
+                var picBuffer;
+
+                if(Math.floor(Math.random()*16) == 0){
+                    if(cursave.pictures.length > 0){
+                        var randPic = cursave.pictures[Math.floor(Math.random()*cursave.pictures.length)];
+                        try {
+                            Jimp.read(randPic, (err, img) => {
+                                if (err) throw err;
+                                img
+                                    .getBuffer(img.getMIME(), (err, buffer) => {
+                                    picBuffer = buffer;
+                                    sendPicture = true;
+                                });
+                            });
+                        } catch (e){
+                            sendPicture = false;
+                            console.log(e);
+                        }
+                    } else {
+                        sendPicture = false;
+                    }
+                }
             
                 msgReply = finalstring.join(' ');
             
-                if(reply){
-                    msg.channel.sendTyping();
-                    setTimeout(() => {
-                        msg.reply(msgReply);
-                        string_JSON();
-                        database_send();
-                    }, 700+msgReply.length);
+                if(!sendPicture){
+                    if(reply){
+                        msg.channel.sendTyping();
+                        setTimeout(() => {
+                            msg.reply(msgReply);
+                            string_JSON();
+                            database_send();
+                        }, 700+msgReply.length);
+                    } else {
+                        msg.channel.sendTyping();
+                        setTimeout(() => {
+                            msg.channel.send(msgReply);
+                            string_JSON();
+                            database_send();
+                        }, 700+msgReply.length);
+                    }
                 } else {
-                    msg.channel.sendTyping();
-                    setTimeout(() => {
-                        msg.channel.send(msgReply);
-                        string_JSON();
-                        database_send();
-                    }, 700+msgReply.length);
+                    if(reply){
+                        msg.channel.sendTyping();
+                        setTimeout(() => {
+                            msg.reply({content: msgReply, files: [new AttachmentBuilder(picBuffer, { name: 'img.png' })]});
+                            string_JSON();
+                            database_send();
+                        }, 700+msgReply.length);
+                    } else {
+                        msg.channel.sendTyping();
+                        setTimeout(() => {
+                            msg.channel.send({content: msgReply, files: [new AttachmentBuilder(picBuffer, { name: 'img.png' })]});
+                            string_JSON();
+                            database_send();
+                        }, 700+msgReply.length);
+                    }
                 }
             }
         }
