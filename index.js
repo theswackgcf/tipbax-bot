@@ -8,7 +8,7 @@ const https = require('https');
 //const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.001";
+const version = "1.002";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -41,12 +41,12 @@ function string_JSON() {
 }
 
 //save data
-/*function database_send() {
+function database_send() {
     var finaltext = "";
     finaltext = JSON.stringify(save);
     var atc = new AttachmentBuilder(Buffer.from(finaltext, 'utf-8'), { name: 'database.txt' });
     client.channels.cache.get(database_channel).send({files:[atc]});
-}*/
+}
 
 
 //intents
