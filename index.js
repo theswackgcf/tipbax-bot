@@ -171,6 +171,9 @@ client.on(Events.MessageCreate, (msg) => {
         let cursave = save[msg.guild.id];
 
         function add_msg(){
+            if(cursave.channels.length == 0) return;
+            if(!cursave.channels.includes(msg.channel.id)) return;
+
             if(cursave.listening){
                 //put message into the data
                 var arggs = args;
@@ -239,6 +242,9 @@ client.on(Events.MessageCreate, (msg) => {
 
         function generate_msg(reply, sendfail){
             if(!reply){
+                if(cursave.channels.length == 0) return;
+                if(!cursave.channels.includes(msg.channel.id)) return;
+
                 var rand = Math.floor(Math.random()*20);
                 if(rand == 1){
                     if(cursave.reacting){
@@ -250,6 +256,9 @@ client.on(Events.MessageCreate, (msg) => {
                         }
                     }
                 }
+            } else {
+                if(cursave.channels.length == 0) return msg.reply("im not enabled in this channel");
+                if(!cursave.channels.includes(msg.channel.id)) return msg.reply("im not enabled in this channel");
             }
             if((!reply && cursave.talking) || (reply)){
                 //generate a string based on previous messages
