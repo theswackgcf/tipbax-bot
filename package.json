@@ -12,6 +12,7 @@
     "discord.js": "^14.14.1",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
-    "https": "^1.0.0"
+    "https": "^1.0.0",
+    "jimp": "^0.22.12"
   }
 }
