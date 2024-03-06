@@ -8,7 +8,7 @@ const https = require('https');
 const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.005";
+const version = "1.006";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -699,6 +699,7 @@ client.on(Events.MessageCreate, (msg) => {
                         var collector = m.createReactionCollector({ filter: collectorFilter, time: 15_000 });
                         collector.on('collect', (reaction, user) => {
                             cursave.words = [];
+                            cursave.pictures = [];
                             string_JSON();
                             database_send();
                             msg.channel.send("ok. tipbax's stored messages have been reset");
