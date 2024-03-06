@@ -8,7 +8,7 @@ const https = require('https');
 const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.003";
+const version = "1.004";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -165,6 +165,7 @@ client.on(Events.MessageCreate, (msg) => {
                 listening: false,
                 talking: false,
                 reacting: false,
+                images: false,
             };
         }
         let cursave = save[msg.guild.id];
@@ -179,8 +180,9 @@ client.on(Events.MessageCreate, (msg) => {
                 //attachments
                 if(msg.attachments.size > 0){
                     for(var i = 0; i < msg.attachments.size; i++){
-                        if(msg.attachments[i][0].type == "image/png" || msg.attachments[i][0].type == "image/jpg" || msg.attachments[i][0].type == "image/jpeg"){
-                            cursave.pictures[cursave.pictures.length] = msg.attachments[i][0].url;
+                        var attach = Array.from(msg.attachments)[i][1];
+                        if(attach.contentType == "image/png" || attach.contentType == "image/jpg" || attach.contentType == "image/jpeg"){
+                            cursave.pictures[cursave.pictures.length] = attach.url;
                         }
                     }
                     //if too many, remove older pictures
@@ -274,32 +276,42 @@ client.on(Events.MessageCreate, (msg) => {
                 finalstring = finalstring.filter(n => n != '');
                 
                 var msgReply = '';
-                var sendPicture = false;
-                var picBuffer;
+                var sendPicture = true;
+                var picBuffer = {};
 
-                if(Math.floor(Math.random()*16) == 0){
-                    if(cursave.pictures.length > 0){
-                        var randPic = cursave.pictures[Math.floor(Math.random()*cursave.pictures.length)];
-                        try {
-                            Jimp.read(randPic, (err, img) => {
-                                if (err) throw err;
-                                img
-                                    .getBuffer(img.getMIME(), (err, buffer) => {
-                                    picBuffer = buffer;
-                                    sendPicture = true;
+                var randChance = Math.floor(Math.random()*10);
+
+                if(cursave.images){
+                    if(randChance == 0){
+                        if(cursave.pictures.length > 0){
+                            var randPic = cursave.pictures[Math.floor(Math.random()*cursave.pictures.length)];
+                            try {
+                                Jimp.read(randPic, (err, img) => {
+                                    if(err){
+                                        throw err;
+                                    }
+                                    img
+                                        .getBuffer(img.getMIME(), (err, buffer) => {
+                                        sendPicture = true;
+                                        picBuffer = buffer;
+                                    });
                                 });
-                            });
-                        } catch (e){
+                            } catch (e){
+                                sendPicture = false;
+                                console.log(e);
+                            }
+                        } else {
                             sendPicture = false;
-                            console.log(e);
                         }
                     } else {
                         sendPicture = false;
                     }
+                } else {
+                    sendPicture = false;
                 }
             
                 msgReply = finalstring.join(' ');
-            
+
                 if(!sendPicture){
                     if(reply){
                         msg.channel.sendTyping();
@@ -382,8 +394,8 @@ client.on(Events.MessageCreate, (msg) => {
                         `use <@${client.user.id}>/${prefix} before each command`,
                         `**help** - this message`,
                         `**invite** - bot's invite link`,
-                        `**enable listening/talking/reacting**`,
-                        `**disable listening/talking/reacting**`,
+                        `**enable listening/talking/reacting/images | all**`,
+                        `**disable listening/talking/reacting/images | all**`,
                         `**generate** - generate a random message`,
                         `**channels add/remove** - prevent me from talking in specific channels`,
                         `**interval** - set interval`,
@@ -397,7 +409,7 @@ client.on(Events.MessageCreate, (msg) => {
                 case "enable":
                     if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
                     if(args.length == 2){
-                        return msg.reply(`**enable listening/talking/reacting**`);
+                        return msg.reply(`**enable listening/talking/reacting/images | all**`);
                     }
                     switch(args[2]){
                         case "listening":
@@ -439,12 +451,38 @@ client.on(Events.MessageCreate, (msg) => {
                                 return msg.reply("reacting has already been enabled");
                             }
                         break;
+                        case "images":
+                            if(!cursave.images){
+                                cursave.images = true;
+                                if(!cursave.channels.includes(msg.channel.id)){
+                                    cursave.channels.push(msg.channel.id);
+                                }
+                                string_JSON();
+                                database_send();
+                                return msg.reply("images in messages **enabled**. tipbax will now randomly attach images");
+                            } else {
+                                return msg.reply("images in messages has already been enabled");
+                            }
+                        break;
+                        case "all":
+                            if(cursave.listening && cursave.talking && cursave.reacting && cursave.images) return msg.reply("all options are already enabled");
+                            cursave.listening = true;
+                            cursave.talking = true;
+                            cursave.reacting = true;
+                            cursave.images = true;
+                            if(!cursave.channels.includes(msg.channel.id)){
+                                cursave.channels.push(msg.channel.id);
+                            }
+                            string_JSON();
+                            database_send();
+                            return msg.reply("ok. enabled listening, talking, reacting and images in messages");
+                        break;
                     }
                 break;
                 case "disable":
                     if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
                     if(args.length == 2){
-                        return msg.reply(`**disable listening/talking/reacting**`);
+                        return msg.reply(`**disable listening/talking/reacting/images | all**`);
                     }
                     switch(args[2]){
                         case "listening":
@@ -476,6 +514,39 @@ client.on(Events.MessageCreate, (msg) => {
                             } else {
                                 return msg.reply("reacting has already been disabled");
                             }
+                        break;
+                        case "reacting":
+                            if(cursave.reacting){
+                                cursave.reacting = false;
+                                string_JSON();
+                                database_send();
+                                return msg.reply("reacting **disabled**. tipbax will no longer make reactions");
+                            } else {
+                                return msg.reply("reacting has already been disabled");
+                            }
+                        break;
+                        case "images":
+                            if(cursave.images){
+                                cursave.images = false;
+                                if(!cursave.channels.includes(msg.channel.id)){
+                                    cursave.channels.push(msg.channel.id);
+                                }
+                                string_JSON();
+                                database_send();
+                                return msg.reply("images in messages **disabled**. tipbax will no longer attach images");
+                            } else {
+                                return msg.reply("images in messages has already been disabled");
+                            }
+                        break;
+                        case "all":
+                            if(!cursave.listening && !cursave.talking && !cursave.reacting && !cursave.images) return msg.reply("all options are already disabled");
+                            cursave.listening = false;
+                            cursave.talking = false;
+                            cursave.reacting = false;
+                            cursave.images = false;
+                            string_JSON();
+                            database_send();
+                            return msg.reply("ok. disabled listening, talking, reacting and images in messages");
                         break;
                     }
                 break;
