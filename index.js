@@ -8,7 +8,7 @@ const https = require('https');
 const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.004";
+const version = "1.005";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -257,13 +257,22 @@ client.on(Events.MessageCreate, (msg) => {
                     }
                 }
             } else {
-                if(cursave.channels.length == 0) return msg.reply("im not enabled in this channel");
-                if(!cursave.channels.includes(msg.channel.id)) return msg.reply("im not enabled in this channel");
+                if(args[0] != prefix){
+                    if(cursave.channels.length == 0) return msg.reply("im not enabled in this channel");
+                    if(!cursave.channels.includes(msg.channel.id)) return msg.reply("im not enabled in this channel");
+                } else {
+                    if(cursave.channels.length == 0) return;
+                    if(!cursave.channels.includes(msg.channel.id)) return;
+                }
             }
             if((!reply && cursave.talking) || (reply)){
                 //generate a string based on previous messages
                 if(sendfail){
-                    if(cursave.words.length == 0) return msg.reply("not enough messages saved");
+                    if(args[0] != prefix){
+                        if(cursave.words.length == 0) return msg.reply("not enough messages saved");
+                    } else {
+                        if(cursave.words.length == 0) return;
+                    }
                 } else {
                     if(cursave.words.length == 0) return;
                 }
