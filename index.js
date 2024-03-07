@@ -336,7 +336,7 @@ client.on(Events.MessageCreate, (msg) => {
                 var finalstring2 = finalstring.join(' ').split(' ');
                 for(var i = 0; i < finalstring2.length; i++){
                     if(finalstring2[i].startsWith('HTTP')){
-                        finalstring2[i].toLowerCase();
+                        finalstring2[i] = finalstring2[i].toLowerCase();
                     }
                 }
 
