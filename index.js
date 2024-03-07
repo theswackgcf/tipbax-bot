@@ -8,7 +8,7 @@ const https = require('https');
 const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.006";
+const version = "1.007";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -125,7 +125,12 @@ client.once(Events.ClientReady, (a) => {
         "Breaking Bad DS",
         "Earthworm Jim 3",
         "New Super Mario CBT",
-        "CBT Wizard"
+        "CBT Wizard",
+        "Where's Waldo",
+        "Car Racing Game Free Download IOS",
+        "Donkey Kong 64",
+        "Undertale 3",
+        "Hotel Mario"
     ];
 
     let rand_act = 0;
@@ -328,7 +333,14 @@ client.on(Events.MessageCreate, (msg) => {
                     sendPicture = false;
                 }
             
-                msgReply = finalstring.join(' ');
+                var finalstring2 = finalstring.join(' ').split(' ');
+                for(var i = 0; i < finalstring2.length; i++){
+                    if(finalstring2[i].startsWith('HTTP')){
+                        finalstring2[i].toLowerCase();
+                    }
+                }
+
+                msgReply = finalstring2.join(' ').replace('@everyone', '@everyоne').replace('@here', '@hеre').replace('\n', ' ');
 
                 if(!sendPicture){
                     if(reply){
