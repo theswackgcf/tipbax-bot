@@ -8,7 +8,7 @@ const https = require('https');
 const Jimp = require("jimp");
 
 let database_init = false;
-const version = "1.007";
+const version = "1.008";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -340,7 +340,7 @@ client.on(Events.MessageCreate, (msg) => {
                     }
                 }
 
-                msgReply = finalstring2.join(' ').replace('@everyone', '@everyоne').replace('@here', '@hеre').replace('\n', ' ');
+                msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
 
                 if(!sendPicture){
                     if(reply){
