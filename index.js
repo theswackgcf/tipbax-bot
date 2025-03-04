@@ -878,7 +878,7 @@ client.on(Events.MessageCreate, (msg) => {
 							msg.reply({content: msgcontent, components: [row]}).then(curmsg => {
 								var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
 								collector.on('collect', i => {
-									if(i.user.id == curmsg.author.id){
+									if(i.user.id == curmsg.mentions.repliedUser.id){
 										switch(i.customId){
 											case "prev":
 												page -= 1;
@@ -977,7 +977,7 @@ client.on(Events.MessageCreate, (msg) => {
 						msg.reply({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]}).then(curmsg => {
 							var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
 							collector.on('collect', i => {
-								if(i.user.id == curmsg.author.id){
+								if(i.user.id == curmsg.mentions.repliedUser.id){
 									switch(i.customId){
 										case "prev":
 											curvid -= 1;
