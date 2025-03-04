@@ -20,6 +20,10 @@ const https = require('https');
 const urban = require('relevant-urban');
 const grawlix = require('grawlix');
 
+const Jimp = require('jimp');
+const emojiRegex = require('emoji-regex');
+const { GifFrame, GifUtil, GifCodec } = require('gifwrap');
+
 grawlix.setDefaults({
   allowed: ['fuck','bitch','shit','cock','sex','cum','dick','ass','piss','motherfucker','cunt','asses','motherfuck','bastard','bitchass','fuckass','dumbass','fatass','jackass'],
   plugins: [
@@ -212,6 +216,32 @@ client.on(Events.MessageCreate, (msg) => {
         }
         let cursave = save[msg.guild.id];
 
+		function wordWrap(str, maxWidth) {
+            var newLineStr = "\n"
+            var done = false
+            var res = ''
+            while (str.length > maxWidth) {
+                var found = false
+                for (var i = maxWidth - 1; i >= 0; i--) {
+                    if (testWhite(str.charAt(i))) {
+                        res = res + [str.slice(0, i), newLineStr].join('')
+                        str = str.slice(i + 1)
+                        found = true
+                        break
+                    }
+                }
+                if (!found) {
+                    res += [str.slice(0, maxWidth), newLineStr].join('')
+                    str = str.slice(maxWidth)
+                }
+            }
+            return res + str
+        }
+        function testWhite(x) {
+            var white = new RegExp(/^\s$/)
+            return white.test(x.charAt(0))
+        }
+
         function add_msg(){
             if(cursave.channels.length == 0) return;
             if(!cursave.channels.includes(msg.channel.id)) return;
@@ -282,7 +312,7 @@ client.on(Events.MessageCreate, (msg) => {
             }
         }
 
-        function generate_msg(reply, sendfail){
+        function generate_msg(reply, sendfail, ret_string){
             if(!reply){
                 if(cursave.channels.length == 0) return;
                 if(!cursave.channels.includes(msg.channel.id)) return;
@@ -300,8 +330,20 @@ client.on(Events.MessageCreate, (msg) => {
                 }
             } else {
                 if(args[0] != prefix){
-                    if(cursave.channels.length == 0) return msg.reply("im not enabled in this channel");
-                    if(!cursave.channels.includes(msg.channel.id)) return msg.reply("im not enabled in this channel");
+                    if(cursave.channels.length == 0){
+						if(ret_string){
+							return prefix
+						} else {
+							msg.reply("im not enabled in this channel");
+						}
+					}
+                    if(!cursave.channels.includes(msg.channel.id)){
+						if(ret_string){
+							return prefix;
+						} else {
+							return msg.reply("im not enabled in this channel");
+						}
+					}
                 } else {
                     if(cursave.channels.length == 0) return;
                     if(!cursave.channels.includes(msg.channel.id)) return;
@@ -311,9 +353,21 @@ client.on(Events.MessageCreate, (msg) => {
                 //generate a string based on previous messages
                 if(sendfail){
                     if(args[0] != prefix){
-                        if(cursave.words.length == 0) return msg.reply("not enough messages saved");
+                        if(cursave.words.length == 0){
+							if(ret_string){
+								return prefix;
+							} else {
+								return msg.reply("not enough messages saved");
+							}
+						}
                     } else {
-                        if(cursave.words.length == 0) return;
+                        if(cursave.words.length == 0){
+							if(ret_string){
+								return prefix;
+							} else {
+								return;
+							}
+						}
                     }
                 } else {
                     if(cursave.words.length == 0) return;
@@ -332,7 +386,11 @@ client.on(Events.MessageCreate, (msg) => {
 				
 				if(finalstring.length == 0){
 					if(reply){
-						return msg.reply("couldn't generate anything");
+						if(ret_string){
+							return prefix;
+						} else {
+							return msg.reply("couldn't generate anything");
+						}
 					} else {
 						return;
 					}
@@ -362,20 +420,24 @@ client.on(Events.MessageCreate, (msg) => {
 
                 msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
 
-                if(reply){
-					msg.channel.sendTyping();
-					setTimeout(() => {
-						msg.reply(msgReply);
-						string_JSON();
-						database_send();
-					}, 700+msgReply.length);
+				if(ret_string){
+					return msgReply;
 				} else {
-					msg.channel.sendTyping();
-					setTimeout(() => {
-						msg.channel.send(msgReply);
-						string_JSON();
-						database_send();
-					}, 700+msgReply.length);
+					if(reply){
+						msg.channel.sendTyping();
+						setTimeout(() => {
+							msg.reply(msgReply);
+							string_JSON();
+							database_send();
+						}, 700+msgReply.length);
+					} else {
+						msg.channel.sendTyping();
+						setTimeout(() => {
+							msg.channel.send(msgReply);
+							string_JSON();
+							database_send();
+						}, 700+msgReply.length);
+					}
 				}
             }
         }
@@ -398,7 +460,7 @@ client.on(Events.MessageCreate, (msg) => {
 		
         if(args[0].toLowerCase() == prefix || repliedto || mentioned){
             if(args.length == 1){
-                generate_msg(true, false);
+                generate_msg(true, false, false);
                 add_msg();
                 return;
             }
@@ -441,8 +503,9 @@ client.on(Events.MessageCreate, (msg) => {
                         `**channels add/remove** - prevent me from talking in specific channels`,
                         `**interval** - set interval`,
                         `**reset** - reset tipbax's memory in this server`,
-						
+						``,
 						`**urban/ub | search | search, page** - search urban dictionary (might contain some vile shit)`,
+						`**jim | message** - generate an earthworm jim title card`,
                     ];
                     return msg.reply(helpArray.join("\n"));
                 break;
@@ -567,7 +630,7 @@ client.on(Events.MessageCreate, (msg) => {
                 break;
                 case "generate":
                     if(!cursave.talking) return msg.reply("NUH UH. can't generate a message!! use the **enable** command to let me listen to messages");
-                    generate_msg(true, true);
+                    generate_msg(true, true, false);
                 break;
                 case "channels":
                     if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
@@ -772,6 +835,7 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 						
 						var title = escAstr(grawlix(curdef[1][1]));
+						console.log(["desc: "+curdef[2][1],"example: "+curdef[3][1]]);
 						var desc = escAstr(grawlix(curdef[2][1].slice(0,1000)));
 						if(desc.length >= 1000){
 							desc += "...";
@@ -852,6 +916,8 @@ client.on(Events.MessageCreate, (msg) => {
 									auth = escAstr(grawlix(curdef[5][1]));
 									id = curdef[0][1];
 									
+									console.log(["desc: "+curdef[2][1],"example: "+curdef[3][1]]);
+									
 									curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
 									
 									i.deferUpdate();
@@ -860,9 +926,113 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 					});
 				break;
+				case "jim":
+                    var letters = require('./jim-font.json');
+					
+					var regex = emojiRegex();
+                    var removeEmoji = new RegExp(regex);
+
+					var genmessage = generate_msg(true, true, true).toLowerCase();
+
+                    var prompt = args.slice(2).join(' ').toLowerCase();
+                    if(args[2] == undefined){
+                        prompt = genmessage.substring(0,256);
+                    }
+
+                    var wrapped;
+                    var textArray;
+
+                    var wrapped = wordWrap(prompt, 13);
+
+                    if(wrapped.length == 0){;
+                        wrapped = prefix.toLowerCase();
+                    }
+
+                    var textArray = wrapped.split("\n");
+                    for(var i = 0; i < textArray.length; i++){
+                        textArray[i] = textArray[i].replace(removeEmoji, "").replace(/[^a-z0-9 !'?.,]/g, "");
+                    }
+                    if(textArray.length == 1 && textArray[0].length == 0){
+                        textArray = [prefix.toLowerCase()];
+                    }
+                    if(textArray.length > 8){
+                        textArray.length = 8;
+                    }
+
+                    var allFrames = 20;
+
+                    var processingGIFS = [
+                        'https://tenor.com/view/go-fuck-yourself-esm-esm-bot-discord-esm-caption-gif-gif-24603401',
+						'https://tenor.com/view/esmbot-this-might-take-a-while-ifunny-gif-23777615',
+						'https://tenor.com/view/esmbot-processing-this-might-take-a-while-waiting-esm-gif-25717035',
+						'https://tenor.com/view/esm-bot-gif-24273329',
+						'https://tenor.com/view/esmbot-esmbot-not-working-processing-this-might-take-a-while-esmbot-worked-gif-22467255',
+						'https://tenor.com/view/esmbot-gif-22032901',
+						'https://tenor.com/view/esmbot-mario-rap-gangsta-processing-gif-20677157',
+						'https://tenor.com/view/processing-this-might-take-a-while-esmbot-gta-gif-24424743',
+						'https://tenor.com/view/processing-gif-20334425',
+						'https://tenor.com/view/esmbot-chungus-reddit-discord-poggers-gif-20268762',
+						'https://tenor.com/view/processing-processing-this-might-take-a-while-this-might-take-a-while-a-whie-a-while-gif-20710844',
+						'https://tenor.com/view/spongebob-patrick-melt-esmbot-processing-gif-20550425',
+						'https://tenor.com/view/processing-esmbot-discord-discord-bot-beetlejuice-gif-19970580',
+						'https://tenor.com/view/eric-andre-discord-waiting-death-meme-gif-22108265',
+						'https://tenor.com/view/processing-gif-22244645'
+                    ];
+
+                    msg.reply(processingGIFS[Math.floor(Math.random() * processingGIFS.length)]).then(curmsg => {
+						msg.channel.sendTyping();
+                        Jimp.read('./img/jim.png').then(bg => {
+                            Jimp.read('./img/jimfont.png').then(font => {
+                                var gifWidth = bg.bitmap.width
+                                var gifHeight = bg.bitmap.height
+                                var frames = []
+                                var frame
+    
+                                //make gif
+                                for(var gifI = 0; gifI < allFrames; gifI++){
+                                    var curX = 0
+                                    var curY = 60
+    
+                                    var letter
+    
+                                    var blank = new Jimp(bg.bitmap.width, bg.bitmap.height)
+                                    blank.composite(bg, 0, 0)
+    
+                                    for(var i = 0; i < textArray.length+1; i++){
+                                        if(i < textArray.length){
+                                            curX = (bg.bitmap.width/2)-((textArray[i].length)*28.5)
+                                            for(var x = 0; x < textArray[i].length; x++){
+                                                letter = font.clone()
+                                                for(var y = 0; y < letters.length; y++){
+                                                    if(letters[y].letter == textArray[i][x]){
+                                                        letter.crop(parseInt(letters[y].x*3), parseInt(letters[y].y*3), parseInt((letters[y].x2*3) - (letters[y].x*3)), parseInt((letters[y].y2*3) - (letters[y].y*3)))
+                                                        curX += 54
+                                                        blank.composite(letter, curX - (((letters[y].x2*3) - (letters[y].x*3))/2), Math.round(((curY - ((letters[y].y2*3) - (letters[y].y*3))/2) + (Math.sin(((curX*60) + gifI)/3)*15))/3)*3)
+                                                    }
+                                                }
+                                            }
+                                            curY += 66
+                                        }
+                                    }
+    
+                                    frame = new GifFrame(gifWidth, gifHeight, { delayCentisecs: 2 })
+                                    frame.bitmap.data = blank.bitmap.data
+                                    frames.push(frame)
+                                }
+    
+                                var codec = new GifCodec()
+								
+                                codec.encodeGif(frames, { loops: 0 }).then(gif => {
+                                    curmsg.delete();
+                                    return msg.reply({files: [ new AttachmentBuilder(gif.buffer, {name:'earthworm-jim.gif'}) ]});
+                                })
+                            })
+                        })
+                    })
+				break;
                 default:
 					command = false;
-                    generate_msg(true, false);
+                    generate_msg(true, false, false);
                     add_msg();
                 break;
             }
@@ -876,7 +1046,7 @@ client.on(Events.MessageCreate, (msg) => {
 			if(save[msg.guild.id]){
 				var rand = Math.floor(Math.random() * cursave.interval);
 				if(rand == 0){
-					generate_msg(false, false);
+					generate_msg(false, false, false);
 					return;
 				}
 			}
@@ -886,15 +1056,3 @@ client.on(Events.MessageCreate, (msg) => {
 
 client.login(bot_token);
 console.log("bot login...");
-
-//server
-/*const http = require('http');
-
-const requestListener = function (req, res) {
-    res.writeHead(200)
-    res.end('server on')
-}
-
-const server = http.createServer(requestListener)
-server.listen(8080)
-console.log('server listening')*/
