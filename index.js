@@ -1,3 +1,15 @@
+//server
+const http = require('http');
+
+const requestListener = function (req, res) {
+    res.writeHead(200)
+    res.end('server on')
+}
+
+const server = http.createServer(requestListener)
+server.listen(8080)
+console.log('server listening')
+
 //discord libraries and token
 const bot_token = process.env.TOKEN;
 const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder } = require("discord.js");
