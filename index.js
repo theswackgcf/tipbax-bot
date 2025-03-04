@@ -876,7 +876,7 @@ client.on(Events.MessageCreate, (msg) => {
 							msg.reply(msgcontent);
 						} else {
 							msg.reply({content: msgcontent, components: [row]}).then(curmsg => {
-								var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
+								var collector = curmsg.createMessageComponentCollector({ time: 900000 });
 								collector.on('collect', i => {
 									if(i.user.id == curmsg.mentions.repliedUser.id){
 										switch(i.customId){
@@ -975,7 +975,7 @@ client.on(Events.MessageCreate, (msg) => {
 							infoarray.push(`description: ${escSlash(v.description)}\n-# views: ${v.views}   ${v.timestamp}   ${ago}`);
 						});
 						msg.reply({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]}).then(curmsg => {
-							var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
+							var collector = curmsg.createMessageComponentCollector({ time: 900000 });
 							collector.on('collect', i => {
 								if(i.user.id == curmsg.mentions.repliedUser.id){
 									switch(i.customId){
