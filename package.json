@@ -10,11 +10,14 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.18.0",
+    "emoji-regex": "^10.4.0",
     "fs": "^0.0.1-security",
+    "gifwrap": "^0.10.1",
     "grawlix": "^1.0.6",
     "grawlix-racism": "^1.0.2",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
+    "jimp": "^0.16.1",
     "relevant-urban": "^2.0.0"
   }
 }
