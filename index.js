@@ -1,5 +1,5 @@
 //discord libraries and token
-const bot_token = 'MTIxNDIzMzMzOTAxMjA2MzM3Mw.Go3n_Y.SW20_63HjgA3TLLr7QYm-M2foo6YemYlAAYtqg';
+const bot_token = process.env.TOKEN;
 const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 //other dependencies
