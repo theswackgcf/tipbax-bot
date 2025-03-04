@@ -1,11 +1,24 @@
 //discord libraries and token
-const bot_token = process.env.TOKEN;
-const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, PermissionsBitField} = require("discord.js");
+const bot_token = 'MTIxNDIzMzMzOTAxMjA2MzM3Mw.Go3n_Y.SW20_63HjgA3TLLr7QYm-M2foo6YemYlAAYtqg';
+const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 //other dependencies
 const fs = require("fs");
 const https = require('https');
-const Jimp = require("jimp");
+const urban = require('relevant-urban');
+const grawlix = require('grawlix');
+
+grawlix.setDefaults({
+  allowed: ['fuck','bitch','shit','cock','sex','cum','dick','ass','piss','motherfucker','cunt','asses','motherfuck','bastard','bitchass','fuckass','dumbass','fatass','jackass'],
+  plugins: [
+    {
+      plugin: require('grawlix-racism'),
+      options: {
+        style: 'asterix',
+      }
+    }
+  ]
+});
 
 let database_init = false;
 const version = "1.008";
@@ -130,7 +143,19 @@ client.once(Events.ClientReady, (a) => {
         "Car Racing Game Free Download IOS",
         "Donkey Kong 64",
         "Undertale 3",
-        "Hotel Mario"
+        "Hotel Mario",
+		"Reggie Bodybuilding Simulator",
+		"cahc adventure",
+		"Bee role",
+		"Golf",
+		"FOOTBALL",
+		"I... am TipBax",
+		"Peggle Deluxe",
+		"Peggle Extreme",
+		"Peggle Nights",
+		"Peggle Dinners",
+		"Peggle",
+		"Mr. Bean for Playstation 2"
     ];
 
     let rand_act = 0;
@@ -283,12 +308,24 @@ client.on(Events.MessageCreate, (msg) => {
                 }
                 var finalstring = [];
                 for(var i = 0; i < Math.floor((Math.random()*10)+1); i++){
-                    finalstring.push(cursave.words[Math.floor(Math.random()*cursave.words.length)]);
+					var word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
+					if(!word.toLowerCase().startsWith('http') && !word.toLowerCase().startsWith('https') && !word.toLowerCase().startsWith('discord.gg')){
+						finalstring.push(word);
+					}
                 }
                 var uppercase = false;
                 if(Math.floor(Math.random()*4) == 1){
                     uppercase = true;
                 }
+				
+				if(finalstring.length == 0){
+					if(reply){
+						return msg.reply("couldn't generate anything");
+					} else {
+						return;
+					}
+				}
+				
                 for(var i = 0; i < finalstring.length; i++){
                     if(uppercase){
                         finalstring[i] = finalstring[i].toUpperCase();
@@ -303,35 +340,6 @@ client.on(Events.MessageCreate, (msg) => {
                 var picBuffer = {};
 
                 var randChance = Math.floor(Math.random()*10);
-
-                if(cursave.images){
-                    if(randChance == 0){
-                        if(cursave.pictures.length > 0){
-                            var randPic = cursave.pictures[Math.floor(Math.random()*cursave.pictures.length)];
-                            try {
-                                Jimp.read(randPic, (err, img) => {
-                                    if(err){
-                                        throw err;
-                                    }
-                                    img
-                                        .getBuffer(img.getMIME(), (err, buffer) => {
-                                        sendPicture = true;
-                                        picBuffer = buffer;
-                                    });
-                                });
-                            } catch (e){
-                                sendPicture = false;
-                                console.log(e);
-                            }
-                        } else {
-                            sendPicture = false;
-                        }
-                    } else {
-                        sendPicture = false;
-                    }
-                } else {
-                    sendPicture = false;
-                }
             
                 var finalstring2 = finalstring.join(' ').split(' ');
                 for(var i = 0; i < finalstring2.length; i++){
@@ -342,50 +350,41 @@ client.on(Events.MessageCreate, (msg) => {
 
                 msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
 
-                if(!sendPicture){
-                    if(reply){
-                        msg.channel.sendTyping();
-                        setTimeout(() => {
-                            msg.reply(msgReply);
-                            string_JSON();
-                            database_send();
-                        }, 700+msgReply.length);
-                    } else {
-                        msg.channel.sendTyping();
-                        setTimeout(() => {
-                            msg.channel.send(msgReply);
-                            string_JSON();
-                            database_send();
-                        }, 700+msgReply.length);
-                    }
-                } else {
-                    if(reply){
-                        msg.channel.sendTyping();
-                        setTimeout(() => {
-                            msg.reply({content: msgReply, files: [new AttachmentBuilder(picBuffer, { name: 'img.png' })]});
-                            string_JSON();
-                            database_send();
-                        }, 700+msgReply.length);
-                    } else {
-                        msg.channel.sendTyping();
-                        setTimeout(() => {
-                            msg.channel.send({content: msgReply, files: [new AttachmentBuilder(picBuffer, { name: 'img.png' })]});
-                            string_JSON();
-                            database_send();
-                        }, 700+msgReply.length);
-                    }
-                }
+                if(reply){
+					msg.channel.sendTyping();
+					setTimeout(() => {
+						msg.reply(msgReply);
+						string_JSON();
+						database_send();
+					}, 700+msgReply.length);
+				} else {
+					msg.channel.sendTyping();
+					setTimeout(() => {
+						msg.channel.send(msgReply);
+						string_JSON();
+						database_send();
+					}, 700+msgReply.length);
+				}
             }
         }
-
-        if(msg.type == 19 && msg.mentions.repliedUser.id == client.user.id){
-            generate_msg(true, false);
-            add_msg();
-            return;
+		
+		var repliedto = false;
+		var mentioned = false;
+		
+		var command = true;
+		
+		if(msg.type == 19 && msg.mentions.repliedUser.id == client.user.id){
+            repliedto = true;
         }
-
-        //bot mentioned
-        if(args[0] == `<@${client.user.id}>` || args[0] == `<@!${client.user.id}>` || args[0].toLowerCase() == prefix){
+		
+		//bot mentioned
+		for(var i = 0; i < args.length; i++){
+			if(args[i] == `<@${client.user.id}>` || args[i] == `<@!${client.user.id}>`){
+				mentioned = true;
+			}
+		}
+		
+        if(args[0].toLowerCase() == prefix || repliedto || mentioned){
             if(args.length == 1){
                 generate_msg(true, false);
                 add_msg();
@@ -424,12 +423,14 @@ client.on(Events.MessageCreate, (msg) => {
                         `use <@${client.user.id}>/${prefix} before each command`,
                         `**help** - this message`,
                         `**invite** - bot's invite link`,
-                        `**enable listening/talking/reacting/images | all**`,
-                        `**disable listening/talking/reacting/images | all**`,
+                        `**enable listening/talking/reacting | all**`,
+                        `**disable listening/talking/reacting | all**`,
                         `**generate** - generate a random message`,
                         `**channels add/remove** - prevent me from talking in specific channels`,
                         `**interval** - set interval`,
                         `**reset** - reset tipbax's memory in this server`,
+						
+						`**urban/ub | search | search, page** - search urban dictionary (might contain some vile shit)`,
                     ];
                     return msg.reply(helpArray.join("\n"));
                 break;
@@ -439,7 +440,7 @@ client.on(Events.MessageCreate, (msg) => {
                 case "enable":
                     if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
                     if(args.length == 2){
-                        return msg.reply(`**enable listening/talking/reacting/images | all**`);
+                        return msg.reply(`**enable listening/talking/reacting | all**`);
                     }
                     switch(args[2]){
                         case "listening":
@@ -481,38 +482,24 @@ client.on(Events.MessageCreate, (msg) => {
                                 return msg.reply("reacting has already been enabled");
                             }
                         break;
-                        case "images":
-                            if(!cursave.images){
-                                cursave.images = true;
-                                if(!cursave.channels.includes(msg.channel.id)){
-                                    cursave.channels.push(msg.channel.id);
-                                }
-                                string_JSON();
-                                database_send();
-                                return msg.reply("images in messages **enabled**. tipbax will now randomly attach images");
-                            } else {
-                                return msg.reply("images in messages has already been enabled");
-                            }
-                        break;
                         case "all":
-                            if(cursave.listening && cursave.talking && cursave.reacting && cursave.images) return msg.reply("all options are already enabled");
+                            if(cursave.listening && cursave.talking && cursave.reacting) return msg.reply("all options are already enabled");
                             cursave.listening = true;
                             cursave.talking = true;
                             cursave.reacting = true;
-                            cursave.images = true;
                             if(!cursave.channels.includes(msg.channel.id)){
                                 cursave.channels.push(msg.channel.id);
                             }
                             string_JSON();
                             database_send();
-                            return msg.reply("ok. enabled listening, talking, reacting and images in messages");
+                            return msg.reply("ok. enabled listening, talking and reacting to messages");
                         break;
                     }
                 break;
                 case "disable":
                     if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
                     if(args.length == 2){
-                        return msg.reply(`**disable listening/talking/reacting/images | all**`);
+                        return msg.reply(`**disable listening/talking/reacting | all**`);
                     }
                     switch(args[2]){
                         case "listening":
@@ -555,28 +542,14 @@ client.on(Events.MessageCreate, (msg) => {
                                 return msg.reply("reacting has already been disabled");
                             }
                         break;
-                        case "images":
-                            if(cursave.images){
-                                cursave.images = false;
-                                if(!cursave.channels.includes(msg.channel.id)){
-                                    cursave.channels.push(msg.channel.id);
-                                }
-                                string_JSON();
-                                database_send();
-                                return msg.reply("images in messages **disabled**. tipbax will no longer attach images");
-                            } else {
-                                return msg.reply("images in messages has already been disabled");
-                            }
-                        break;
                         case "all":
-                            if(!cursave.listening && !cursave.talking && !cursave.reacting && !cursave.images) return msg.reply("all options are already disabled");
+                            if(!cursave.listening && !cursave.talking && !cursave.reacting) return msg.reply("all options are already disabled");
                             cursave.listening = false;
                             cursave.talking = false;
                             cursave.reacting = false;
-                            cursave.images = false;
                             string_JSON();
                             database_send();
-                            return msg.reply("ok. disabled listening, talking, reacting and images in messages");
+                            return msg.reply("ok. disabled listening, talking, and reacting to messages");
                         break;
                     }
                 break;
@@ -719,23 +692,186 @@ client.on(Events.MessageCreate, (msg) => {
                         });
                     });
                 break;
+				case "urban":
+				case "ub":
+					msg.channel.sendTyping();
+				
+					var urban_json = {};
+					var input = 0;
+					var page = 1;
+					var random = false;
+					if(args.length == 2){
+						urban_json = urban.random();
+						random = true;
+					} else if(args.length > 2){
+						random = false;
+						var args2 = msg.content.split(" ");
+						var split = args2.slice(2).join(" ").split(",");
+						input = split[0].trim();
+						if(split.length >= 2){
+							page = parseInt(split[1].trim());
+						} else {
+							page = 1;
+						}
+						try {
+							urban_json = urban.all(input);
+						} catch {
+							return msg.reply("couldn't find shit");
+						}
+					}
+					Promise.resolve(urban_json).then(json => {
+						var defs;
+						var len;
+						if(!random){
+							defs = Object.entries(json);
+							len = defs.length;
+						}
+						
+						var ind = 0;
+						
+						//page check
+						if(isNaN(page)){
+							ind = 1;
+						} else if(page <= 0){
+							ind = 1;
+						} else if(page > len-1){
+							ind = len-1;
+						} else {
+							ind = page;
+						}
+						
+						if(!random){
+							try {
+								var curdef = Object.entries(defs[ind][1]);
+							} catch {
+								return msg.reply("couldn't find shit");
+							}
+						} else {
+							curdef = Object.entries(json);
+							len = 2;
+						}
+						
+						function escAstr(str) {
+							return str.replace(/\*/g, '\\*');
+						}
+						
+						function escSlash(str) {
+							return str.replace(/\//g, '\\/');
+						}
+						
+						var title = escAstr(grawlix(curdef[1][1]));
+						console.log(["desc: "+curdef[2][1],"example: "+curdef[3][1]]);
+						var desc = escAstr(grawlix(curdef[2][1].slice(0,1000)));
+						if(desc.length >= 1000){
+							desc += "...";
+						}
+						var exam = escAstr(grawlix(curdef[3][1].slice(0,1000)));
+						if(exam.length >= 1000){
+							exam += "...";
+						}
+						var score = [curdef[6][1],curdef[7][1]];
+						var urban_url = escSlash(curdef[4][1]);
+						var auth = escAstr(grawlix(curdef[5][1]));
+						var id = curdef[0][1];
+						
+						var row = new ActionRowBuilder()
+						.addComponents(
+							new ButtonBuilder()
+								.setCustomId('prev')
+								.setEmoji('⬅️')
+								.setStyle('Secondary'),
+							new ButtonBuilder()
+								.setCustomId('next')
+								.setEmoji('➡️')
+								.setStyle('Secondary'),
+						);
+						
+						if(ind == len-1){
+							ind = 1;
+							len = 2;
+						}
+						
+						var msgcontent = `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`;
+						
+						if(random || ind == len-1){
+							msg.reply(msgcontent);
+						} else {
+							msg.reply({content: msgcontent, components: [row]}).then(curmsg => {
+								var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
+								collector.on('collect', i => {
+									switch(i.customId){
+										case "prev":
+											page -= 1;
+											if(page < 1){
+												page = 1;
+											}
+											break
+										case "next":
+											page += 1;
+											if(page > len-1){
+												page = len-1;
+											}
+											break
+									}
+									
+									//page check
+									if(isNaN(page)){
+										ind = 1;
+									} else if(page <= 0){
+										ind = 1;
+									} else if(page > len-1){
+										ind = len-1;
+									} else {
+										ind = page;
+									}
+									
+									curdef = Object.entries(defs[ind][1]);
+									
+									title = escAstr(grawlix(curdef[1][1]));
+									desc = escAstr(grawlix(curdef[2][1].slice(0,1000)));
+									if(desc.length >= 1000){
+										desc += "...";
+									}
+									exam = escAstr(grawlix(curdef[3][1].slice(0,1000)));
+									if(exam.length >= 1000){
+										exam += "...";
+									}
+									score = [curdef[6][1],curdef[7][1]];
+									urban_url = escSlash(curdef[4][1]);
+									auth = escAstr(grawlix(curdef[5][1]));
+									id = curdef[0][1];
+									
+									console.log(["desc: "+curdef[2][1],"example: "+curdef[3][1]]);
+									
+									curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
+									
+									i.deferUpdate();
+								});
+							});
+						}
+					});
+				break;
                 default:
+					command = false;
                     generate_msg(true, false);
                     add_msg();
                 break;
             }
         } else {
+			command = false;
             add_msg();
         }
 
         //generate messages on its own
-        if(save[msg.guild.id]){
-            var rand = Math.floor(Math.random() * cursave.interval);
-            if(rand == 0){
-                generate_msg(false, false);
-                return;
-            }
-        }
+		if(!command){
+			if(save[msg.guild.id]){
+				var rand = Math.floor(Math.random() * cursave.interval);
+				if(rand == 0){
+					generate_msg(false, false);
+					return;
+				}
+			}
+		}
     }
 });
 
@@ -743,7 +879,7 @@ client.login(bot_token);
 console.log("bot login...");
 
 //server
-const http = require('http');
+/*const http = require('http');
 
 const requestListener = function (req, res) {
     res.writeHead(200)
@@ -752,4 +888,4 @@ const requestListener = function (req, res) {
 
 const server = http.createServer(requestListener)
 server.listen(8080)
-console.log('server listening')
+console.log('server listening')*/
