@@ -772,7 +772,6 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 						
 						var title = escAstr(grawlix(curdef[1][1]));
-						console.log(["desc: "+curdef[2][1],"example: "+curdef[3][1]]);
 						var desc = escAstr(grawlix(curdef[2][1].slice(0,1000)));
 						if(desc.length >= 1000){
 							desc += "...";
@@ -852,8 +851,6 @@ client.on(Events.MessageCreate, (msg) => {
 									urban_url = escSlash(curdef[4][1]);
 									auth = escAstr(grawlix(curdef[5][1]));
 									id = curdef[0][1];
-									
-									console.log(["desc: "+curdef[2][1],"example: "+curdef[3][1]]);
 									
 									curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
 									
