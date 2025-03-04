@@ -17,8 +17,12 @@ const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, Perm
 //other dependencies
 const fs = require("fs");
 const https = require('https');
+
 const urban = require('relevant-urban');
 const grawlix = require('grawlix');
+
+const yts = require( 'yt-search' );
+const randomTitle = require('random-title');
 
 const Jimp = require('jimp');
 const emojiRegex = require('emoji-regex');
@@ -241,6 +245,14 @@ client.on(Events.MessageCreate, (msg) => {
             var white = new RegExp(/^\s$/)
             return white.test(x.charAt(0))
         }
+		
+		function escAstr(str) {
+			return str.replace(/\*/g, '\\*');
+		}
+		
+		function escSlash(str) {
+			return str.replace(/\//g, '\\/');
+		}
 
         function add_msg(){
             if(cursave.channels.length == 0) return;
@@ -505,6 +517,7 @@ client.on(Events.MessageCreate, (msg) => {
                         `**reset** - reset tipbax's memory in this server`,
 						``,
 						`**urban/ub | search | search, page** - search urban dictionary (might contain some vile shit)`,
+						`**youtube/yt/yts | search** - search youtube`,
 						`**jim | message** - generate an earthworm jim title card`,
                     ];
                     return msg.reply(helpArray.join("\n"));
@@ -826,14 +839,6 @@ client.on(Events.MessageCreate, (msg) => {
 							len = 2;
 						}
 						
-						function escAstr(str) {
-							return str.replace(/\*/g, '\\*');
-						}
-						
-						function escSlash(str) {
-							return str.replace(/\//g, '\\/');
-						}
-						
 						var title = escAstr(grawlix(curdef[1][1]));
 						var desc = escAstr(grawlix(curdef[2][1].slice(0,1000)));
 						if(desc.length >= 1000){
@@ -873,19 +878,21 @@ client.on(Events.MessageCreate, (msg) => {
 							msg.reply({content: msgcontent, components: [row]}).then(curmsg => {
 								var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
 								collector.on('collect', i => {
-									switch(i.customId){
-										case "prev":
-											page -= 1;
-											if(page < 1){
-												page = 1;
-											}
-											break
-										case "next":
-											page += 1;
-											if(page > len-1){
-												page = len-1;
-											}
-											break
+									if(i.user.id == msg.author.id){
+										switch(i.customId){
+											case "prev":
+												page -= 1;
+												if(page < 1){
+													page = 1;
+												}
+												break
+											case "next":
+												page += 1;
+												if(page > len-1){
+													page = len-1;
+												}
+												break
+										}
 									}
 									
 									//page check
@@ -921,6 +928,79 @@ client.on(Events.MessageCreate, (msg) => {
 								});
 							});
 						}
+					});
+				break;
+				case "youtube":
+				case "yt":
+				case "yts":
+					var vidsarray = [];
+					var infoarray = [];
+					var curvid = 0;
+					
+					var input = "";
+					var inpadd = "";
+					var info = 0;
+					
+					if(args.length == 2){
+						input = randomTitle({words: Math.floor(Math.random() * 7)+1});
+						inpadd = "**random youtube video:**\n";
+					} else if(args.length >= 3){
+						input = args.slice(2).join(" ");
+						inpadd = `**${input}:**\n`;
+					}
+					
+					msg.channel.sendTyping();
+					
+					var row = new ActionRowBuilder()
+					.addComponents(
+						new ButtonBuilder()
+							.setCustomId('prev')
+							.setEmoji('⬅️')
+							.setStyle('Secondary'),
+						new ButtonBuilder()
+							.setCustomId('next')
+							.setEmoji('➡️')
+							.setStyle('Secondary'),
+					);
+					
+					var search = yts(input).then(res => {
+						res.videos.slice( 0, 16 ).forEach(function(v) {
+							vidsarray.push(v.url);
+							var ago;
+							if(v.ago == undefined){
+								ago = "undefined";
+							} else {
+								ago = v.ago;
+							}
+							infoarray.push(`description: ${escSlash(v.description)}\n-# views: ${v.views}   ${v.timestamp}   ${ago}`);
+						});
+						msg.reply({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]}).then(curmsg => {
+							var collector = curmsg.createMessageComponentCollector({ time: 300000000 });
+							collector.on('collect', i => {
+								if(i.user.id == msg.author.id){
+									switch(i.customId){
+										case "prev":
+											curvid -= 1;
+											if(curvid < 0){
+												curvid = 0;
+											}
+											info = curvid;
+											break
+										case "next":
+											curvid += 1;
+											if(curvid >= vidsarray.length-1){
+												curvid = vidsarray.length-1;
+											}
+											info = curvid;
+											break
+									}
+								}
+								
+								curmsg.edit({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]});
+								
+								i.deferUpdate();
+							});
+						});
 					});
 				break;
 				case "jim":
