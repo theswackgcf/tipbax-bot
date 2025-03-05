@@ -1032,7 +1032,8 @@ client.on(Events.MessageCreate, (msg) => {
 												if(letters[y].letter == textArray[i][x]){
 													letter.crop(parseInt(letters[y].x*3), parseInt(letters[y].y*3), parseInt((letters[y].x2*3) - (letters[y].x*3)), parseInt((letters[y].y2*3) - (letters[y].y*3)))
 													curX += 54
-													blank.composite(letter, curX - (((letters[y].x2*3) - (letters[y].x*3))/2), Math.round(((curY - ((letters[y].y2*3) - (letters[y].y*3))/2) + (Math.sin(((curX*60) + gifI)/3)*15))/3)*3)
+													var mod_ = 16;
+													blank.composite(letter, curX - (((letters[y].x2*3) - (letters[y].x*3))/2), Math.round(((curY - ((letters[y].y2*3) - (letters[y].y*3))/2) + (Math.sin((((curX*60)%mod_) + gifI)/3)*15))/3)*3)
 												}
 											}
 										}
