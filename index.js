@@ -894,38 +894,38 @@ client.on(Events.MessageCreate, (msg) => {
 													}
 													break
 											}
+											
+											//page check
+											if(isNaN(page)){
+												ind = 1;
+											} else if(page <= 0){
+												ind = 1;
+											} else if(page > len-1){
+												ind = len-1;
+											} else {
+												ind = page;
+											}
+											
+											curdef = Object.entries(defs[ind][1]);
+											
+											title = escAstr(grawlix(curdef[1][1]));
+											desc = escAstr(grawlix(curdef[2][1].substring(0,850)));
+											if(desc.length >= 850){
+												desc += "...";
+											}
+											exam = escAstr(grawlix(curdef[3][1].substring(0,850)));
+											if(exam.length >= 850){
+												exam += "...";
+											}
+											score = [curdef[6][1],curdef[7][1]];
+											urban_url = escSlash(curdef[4][1]);
+											auth = escAstr(grawlix(curdef[5][1]));
+											id = curdef[0][1];
+											
+											curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
+											
+											i.deferUpdate();
 										}
-										
-										//page check
-										if(isNaN(page)){
-											ind = 1;
-										} else if(page <= 0){
-											ind = 1;
-										} else if(page > len-1){
-											ind = len-1;
-										} else {
-											ind = page;
-										}
-										
-										curdef = Object.entries(defs[ind][1]);
-										
-										title = escAstr(grawlix(curdef[1][1]));
-										desc = escAstr(grawlix(curdef[2][1].substring(0,850)));
-										if(desc.length >= 850){
-											desc += "...";
-										}
-										exam = escAstr(grawlix(curdef[3][1].substring(0,850)));
-										if(exam.length >= 850){
-											exam += "...";
-										}
-										score = [curdef[6][1],curdef[7][1]];
-										urban_url = escSlash(curdef[4][1]);
-										auth = escAstr(grawlix(curdef[5][1]));
-										id = curdef[0][1];
-										
-										curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
-										
-										i.deferUpdate();
 									});
 								});
 							}
@@ -995,18 +995,68 @@ client.on(Events.MessageCreate, (msg) => {
 												info = curvid;
 												break
 										}
+										
+										curmsg.edit({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]});
+									
+										i.deferUpdate();
 									}
-									
-									curmsg.edit({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]});
-									
-									i.deferUpdate();
 								});
 							});
 						});
 					break;
 					case "jim":
+						async function doJimImage(curmsg) {
+							bg = await Jimp.read('./img/jim.png');
+							font = await Jimp.read('./img/jimfont.png');
+							var gifWidth = bg.bitmap.width
+							var gifHeight = bg.bitmap.height
+							var frames = []
+							var frame
+
+							//make gif
+							for(var gifI = 0; gifI < allFrames; gifI++){
+								var curX = 0
+								var curY = 60
+
+								var letter
+
+								var blank = new Jimp(bg.bitmap.width, bg.bitmap.height)
+								blank.composite(bg, 0, 0)
+
+								for(var i = 0; i < textArray.length+1; i++){
+									if(i < textArray.length){
+										curX = (bg.bitmap.width/2)-((textArray[i].length)*28.5)
+										for(var x = 0; x < textArray[i].length; x++){
+											letter = font.clone()
+											for(var y = 0; y < letters.length; y++){
+												if(letters[y].letter == textArray[i][x]){
+													letter.crop(parseInt(letters[y].x*3), parseInt(letters[y].y*3), parseInt((letters[y].x2*3) - (letters[y].x*3)), parseInt((letters[y].y2*3) - (letters[y].y*3)))
+													curX += 54
+													blank.composite(letter, curX - (((letters[y].x2*3) - (letters[y].x*3))/2), Math.round(((curY - ((letters[y].y2*3) - (letters[y].y*3))/2) + (Math.sin(((curX*60) + gifI)/3)*15))/3)*3)
+												}
+											}
+										}
+										curY += 66
+									}
+								}
+
+								frame = new GifFrame(gifWidth, gifHeight, { delayCentisecs: 2 })
+								frame.bitmap.data = blank.bitmap.data
+								frames.push(frame)
+							}
+
+							var codec = new GifCodec()
+							
+							await codec.encodeGif(frames, { loops: 0 }).then(gif => {
+								timeEnd = Date.now();
+								timeFin = Math.floor((timeEnd - timeStart) / 1000);
+								curmsg.delete();
+								return msg.reply({content: `-# took ${timeFin} seconds`, files: [ new AttachmentBuilder(gif.buffer, {name:'earthworm-jim.gif'}) ]});
+							})
+						}
+					
 						var letters = require('./jim-font.json');
-						
+					
 						var regex = emojiRegex();
 						var removeEmoji = new RegExp(regex);
 
@@ -1057,56 +1107,18 @@ client.on(Events.MessageCreate, (msg) => {
 							'https://tenor.com/view/processing-gif-22244645'
 						];
 
+						var timeStart = Date.now();
+						var timeEnd = Date.now();
+						var finTime = 0;
+
+						var bg;
+						var font;
+
 						msg.reply(processingGIFS[Math.floor(Math.random() * processingGIFS.length)]).then(curmsg => {
 							msg.channel.sendTyping();
-							Jimp.read('./img/jim.png').then(bg => {
-								Jimp.read('./img/jimfont.png').then(font => {
-									var gifWidth = bg.bitmap.width
-									var gifHeight = bg.bitmap.height
-									var frames = []
-									var frame
-		
-									//make gif
-									for(var gifI = 0; gifI < allFrames; gifI++){
-										var curX = 0
-										var curY = 60
-		
-										var letter
-		
-										var blank = new Jimp(bg.bitmap.width, bg.bitmap.height)
-										blank.composite(bg, 0, 0)
-		
-										for(var i = 0; i < textArray.length+1; i++){
-											if(i < textArray.length){
-												curX = (bg.bitmap.width/2)-((textArray[i].length)*28.5)
-												for(var x = 0; x < textArray[i].length; x++){
-													letter = font.clone()
-													for(var y = 0; y < letters.length; y++){
-														if(letters[y].letter == textArray[i][x]){
-															letter.crop(parseInt(letters[y].x*3), parseInt(letters[y].y*3), parseInt((letters[y].x2*3) - (letters[y].x*3)), parseInt((letters[y].y2*3) - (letters[y].y*3)))
-															curX += 54
-															blank.composite(letter, curX - (((letters[y].x2*3) - (letters[y].x*3))/2), Math.round(((curY - ((letters[y].y2*3) - (letters[y].y*3))/2) + (Math.sin(((curX*60) + gifI)/3)*15))/3)*3)
-														}
-													}
-												}
-												curY += 66
-											}
-										}
-		
-										frame = new GifFrame(gifWidth, gifHeight, { delayCentisecs: 2 })
-										frame.bitmap.data = blank.bitmap.data
-										frames.push(frame)
-									}
-		
-									var codec = new GifCodec()
-									
-									codec.encodeGif(frames, { loops: 0 }).then(gif => {
-										curmsg.delete();
-										return msg.reply({files: [ new AttachmentBuilder(gif.buffer, {name:'earthworm-jim.gif'}) ]});
-									})
-								})
-							})
-						})
+							
+							doJimImage(curmsg);
+						});
 					break;
 					default:
 						command = false;
