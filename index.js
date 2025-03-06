@@ -389,7 +389,7 @@ client.on(Events.MessageCreate, (msg) => {
 					for(var i = 0; i < Math.floor((Math.random()*10)+1); i++){
 						var word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
 						if(!word.toLowerCase().startsWith('http') && !word.toLowerCase().startsWith('https') && !word.toLowerCase().startsWith('discord.gg')){
-							finalstring.push(word);
+							finalstring.push(word.replace(/(\r\n|\n|\r)/gm, ""));
 						}
 					}
 					var uppercase = false;
@@ -513,6 +513,8 @@ client.on(Events.MessageCreate, (msg) => {
 							`**enable listening/talking/reacting | all**`,
 							`**disable listening/talking/reacting | all**`,
 							`**generate** - generate a random message`,
+							`**essay** - generate a longer message`,
+							`**dialogue/dg** - generate a dialogue`,
 							`**channels add/remove** - prevent me from talking in specific channels`,
 							`**interval** - set interval`,
 							`**reset** - reset tipbax's memory in this server`,
@@ -645,6 +647,35 @@ client.on(Events.MessageCreate, (msg) => {
 					case "generate":
 						if(!cursave.talking) return msg.reply("NUH UH. can't generate a message!! use the **enable** command to let me listen to messages");
 						generate_msg(true, true, false);
+					break;
+					case "essay":
+						if(!cursave.talking) return msg.reply("NUH UH. can't generate a message!! use the **enable** command to let me listen to messages");
+						var finalstr = "";
+						for(var i = 0; i < Math.floor(Math.random()*36)+10; i++){
+							finalstr += generate_msg(true, true, true)+". ";
+						}
+						msg.reply(finalstr.substring(0,2000));
+					break;
+					case "dialogue":
+					case "dg":
+						if(!cursave.talking) return msg.reply("NUH UH. can't generate a message!! use the **enable** command to let me listen to messages");
+						var finalstr = "";
+						var rand = 0;
+						for(var i = 0; i < Math.floor(Math.random()*6)+2; i++){
+							finalstr += '"'+generate_msg(true, true, true);
+							rand = Math.floor(Math.random()*5);
+							if(rand == 0){
+								finalstr += '?"';
+							} else if(rand == 0){
+								finalstr += '!"';
+							} else if(rand == 0){
+								finalstr += '."';
+							} else {
+								finalstr += '"';
+							}
+							finalstr += "\n";
+						}
+						msg.reply(finalstr.substring(0,2000));
 					break;
 					case "channels":
 						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
