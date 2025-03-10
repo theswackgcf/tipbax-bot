@@ -389,7 +389,7 @@ client.on(Events.MessageCreate, (msg) => {
 					for(var i = 0; i < Math.floor((Math.random()*10)+1); i++){
 						var word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
 						if(!word.toLowerCase().startsWith('http') && !word.toLowerCase().startsWith('https') && !word.toLowerCase().startsWith('discord.gg')){
-							finalstring.push(word.replace(/(\r\n|\n|\r)/gm, ""));
+							finalstring.push(word.replace(/(\r\n|\n|\r)/gm, " "));
 						}
 					}
 					var uppercase = false;
@@ -519,7 +519,7 @@ client.on(Events.MessageCreate, (msg) => {
 							`**interval** - set interval`,
 							`**reset** - reset tipbax's memory in this server`,
 							``,
-							`**urban/ub | search | search, page** - search urban dictionary (might contain some vile shit)`,
+							`**urban/ub/ud | search | search, page** - search urban dictionary (might contain some vile shit)`,
 							`**youtube/yt/yts | search** - search youtube`,
 							`**jim | message** - generate an earthworm jim title card`,
 						];
@@ -659,23 +659,38 @@ client.on(Events.MessageCreate, (msg) => {
 					case "dialogue":
 					case "dg":
 						if(!cursave.talking) return msg.reply("NUH UH. can't generate a message!! use the **enable** command to let me listen to messages");
+						msg.channel.sendTyping();
+						
 						var finalstr = "";
 						var rand = 0;
-						for(var i = 0; i < Math.floor(Math.random()*6)+2; i++){
-							finalstr += '"'+generate_msg(true, true, true);
-							rand = Math.floor(Math.random()*5);
-							if(rand == 0){
-								finalstr += '?"';
-							} else if(rand == 0){
-								finalstr += '!"';
-							} else if(rand == 0){
-								finalstr += '."';
-							} else {
-								finalstr += '"';
+						var size = Math.floor(Math.random()*6)+2;
+						var namearray = [];
+						
+						async function doMemberNames(){
+							for(var i = 0; i < size; i++){
+								var randmember = await msg.guild.members.fetch();
+								namearray.push(randmember.random().user.username);
 							}
-							finalstr += "\n";
 						}
-						msg.reply(finalstr.substring(0,2000));
+						
+						doMemberNames().then(() => {
+							for(var i = 0; i < size; i++){
+								finalstr += '**'+namearray[i]+"**: "+'"'+generate_msg(true, true, true);
+								rand = Math.floor(Math.random()*5);
+								if(rand == 0){
+									finalstr += '?"';
+								} else if(rand == 0){
+									finalstr += '!"';
+								} else if(rand == 0){
+									finalstr += '."';
+								} else {
+									finalstr += '"';
+								}
+								finalstr += "\n";
+							}
+							
+							return msg.reply(finalstr.substring(0,2000));
+						});
 					break;
 					case "channels":
 						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
@@ -724,14 +739,14 @@ client.on(Events.MessageCreate, (msg) => {
 									var chn = msg.guild.channels.cache.find(ch => ch.id == textChat);
 									if(chn != undefined){
 										if(!cursave.channels.includes(textChat)){
-										cursave.channels.push(textChat);
-										success ++;
+											cursave.channels.push(textChat);
+											success ++;
 										}
 									}
 								}
 
 								if(success == 0){
-								return msg.reply("no valid channels were added");
+									return msg.reply("no valid channels were added");
 								}
 
 								string_JSON();
@@ -814,6 +829,7 @@ client.on(Events.MessageCreate, (msg) => {
 					break;
 					case "urban":
 					case "ub":
+					case "ud":
 						msg.channel.sendTyping();
 					
 						var urban_json = {};
