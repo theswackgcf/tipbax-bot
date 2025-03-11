@@ -175,7 +175,17 @@ client.once(Events.ClientReady, (a) => {
 		"Peggle Nights",
 		"Peggle Dinners",
 		"Peggle",
-		"Mr. Bean for Playstation 2"
+		"Mr. Bean for Playstation 2",
+		"Luigi & Spaghetti",
+		"Luigi en Circusland",
+		"Super Obama World",
+		"Yoshi",
+		"Crazy Bus",
+		"Falling horse",
+		"Undertale 2",
+		"HORSE",
+		"Homer Run",
+		"Meme Run"
     ];
 
     let rand_act = 0;
