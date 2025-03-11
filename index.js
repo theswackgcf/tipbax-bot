@@ -990,12 +990,11 @@ client.on(Events.MessageCreate, (msg) => {
 						var info = 0;
 						
 						if(args.length == 2){
-							input = randomTitle({words: Math.floor(Math.random() * 7)+1});
-							inpadd = "**random youtube video:**\n";
+							input = generate_msg(true, true, true).toLowerCase();
 						} else if(args.length >= 3){
 							input = args.slice(2).join(" ");
-							inpadd = `**${input}:**\n`;
 						}
+						inpadd = `**${input}:**\n`;
 						
 						msg.channel.sendTyping();
 						
