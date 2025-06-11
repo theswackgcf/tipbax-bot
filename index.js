@@ -41,7 +41,7 @@ grawlix.setDefaults({
 });
 
 let database_init = false;
-const version = "1.008";
+const version = "1.01";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -227,6 +227,7 @@ client.on(Events.MessageCreate, (msg) => {
 					talking: false,
 					reacting: false,
 					images: false,
+					markov: true,
 				};
 			}
 			let cursave = save[msg.guild.id];
@@ -290,6 +291,9 @@ client.on(Events.MessageCreate, (msg) => {
 					}
 
 					var mode = Math.floor(Math.random()*4);
+					if(mode == 3 && arggs.join(' ').trim().length >= 360){
+						mode = Math.floor(Math.random()*3);
+					}
 					//0 = one word from message
 					//1 = some words from message
 					//2 = part of a message
@@ -395,11 +399,69 @@ client.on(Events.MessageCreate, (msg) => {
 					} else {
 						if(cursave.words.length == 0) return;
 					}
+				
+					var markov = true;
+					
+					if(cursave.markov != undefined){
+						markov = cursave.markov;
+					}
+					
 					var finalstring = [];
+					
+					//making a question
+					if(!reply && !sendfail && !ret_string){
+						if(msg.content.trim().length <= 100){
+							var qchance = Math.floor(Math.random()*16);
+							if(qchance < 2){
+								finalstring[0] = msg.content.trim()+"?";
+							}
+						}
+					}
+					
 					for(var i = 0; i < Math.floor((Math.random()*10)+1); i++){
-						var word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
+						var lastword = "";
+						var saveword = "";
+						if(finalstring.length > 0){
+							var temp = finalstring[finalstring.length-1].split(" ");
+							lastword = temp[temp.length-1];
+						}
+						var word;
+						if(!markov){
+							word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
+							saveword = word;
+						} else {
+							if(lastword == ""){
+								word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
+								saveword = word;
+							} else {
+								var success = false;
+								for(var w = 0; w < cursave.words.length; w++){
+									if(cursave.words[w].toLowerCase().split(" ")[0].toLowerCase() == lastword.toLowerCase()){
+										if(cursave.words[w] != saveword){
+											var temp = cursave.words[w].split(" ");
+											var finalphrase = [];
+											if(temp.length > 1){
+												for(var j = 1; j < temp.length; j++){
+													finalphrase.push(temp[j]);
+												}
+												word = finalphrase.join(" ");
+												saveword = word;
+												success = true;
+												break;
+											}
+										}
+									}
+								}
+								if(!success){
+									word = cursave.words[Math.floor(Math.random()*cursave.words.length)];
+									saveword = word;
+								}
+							}
+						}
 						if(!word.toLowerCase().startsWith('http') && !word.toLowerCase().startsWith('https') && !word.toLowerCase().startsWith('discord.gg')){
-							finalstring.push(word.replace(/(\r\n|\n|\r)/gm, " "));
+							if(!word.toLowerCase().includes(`<@${client.user.id}>`) && !word.toLowerCase().includes(`<!@${client.user.id}>`)){
+								finalstring.push(word.replace(/(\r\n|\n|\r)/gm, " "));
+							}
 						}
 					}
 					var uppercase = false;
@@ -520,6 +582,7 @@ client.on(Events.MessageCreate, (msg) => {
 							`use <@${client.user.id}>/${prefix} before each command`,
 							`**help** - this message`,
 							`**invite** - bot's invite link`,
+							`**markov <true/false>** - enable/disable markov chain generation in my messages`,
 							`**enable listening/talking/reacting | all**`,
 							`**disable listening/talking/reacting | all**`,
 							`**generate** - generate a random message`,
@@ -537,6 +600,32 @@ client.on(Events.MessageCreate, (msg) => {
 					break;
 					case "invite":
 						return msg.reply("https://discord.com/oauth2/authorize?client_id=1214233339012063373&scope=bot&permissions=274878286912");
+					break;
+					case "markov":
+						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						var curmarkov = "true";
+						if(cursave.markov != undefined){
+							if(!cursave.markov){
+								curmarkov = "false";
+							}
+						}
+						if(args.length == 2){
+							return msg.reply(`**markov <true/false>** - enable/disable markov chain generation in my messages\nmarkov status: **${curmarkov}**`);
+						}
+						if(args[2] != "true" && args[2] != "false") return msg.reply("thats not true or false idiot");
+						var answer = false;
+						if(args[2] == "true"){
+							answer = true;
+						} else if(args[2] == "false"){
+							answer = false;
+						}
+						
+						cursave.markov = answer;
+
+						string_JSON();
+						database_send();
+
+						return msg.reply(`ok. markov chain generation changed to **${answer}**`);
 					break;
 					case "enable":
 						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
@@ -920,7 +1009,7 @@ client.on(Events.MessageCreate, (msg) => {
 								new ButtonBuilder()
 									.setCustomId('next')
 									.setEmoji('➡️')
-									.setStyle('Secondary'),
+									.setStyle('Secondary')
 							);
 							
 							if(ind == len-1){
@@ -979,9 +1068,13 @@ client.on(Events.MessageCreate, (msg) => {
 											auth = escAstr(grawlix(curdef[5][1]));
 											id = curdef[0][1];
 											
-											curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
+											try {
+												curmsg.edit({content: `**${title}**\n\n${desc}\n\n"${exam}"\n\n👍 **${score[0].toString()}** 👎 **${score[1].toString()}**\n\**\- ${auth}**\n-# ${ind}/${len-1}  id: ${id}  url: ${urban_url}`,components: [row]});
 											
-											i.deferUpdate();
+												i.deferUpdate();
+											} catch (e) {
+												console.log(e);
+											}
 										}
 									});
 								});
@@ -1018,6 +1111,10 @@ client.on(Events.MessageCreate, (msg) => {
 								.setCustomId('next')
 								.setEmoji('➡️')
 								.setStyle('Secondary'),
+							new ButtonBuilder()
+								.setCustomId('delete')
+								.setEmoji('❌')
+								.setStyle('Secondary'),
 						);
 						
 						var search = yts(input).then(res => {
@@ -1034,6 +1131,16 @@ client.on(Events.MessageCreate, (msg) => {
 							msg.reply({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]}).then(curmsg => {
 								var collector = curmsg.createMessageComponentCollector({ time: 900000 });
 								collector.on('collect', i => {
+									if(i.customId == "delete"){
+										try {
+											curmsg.edit({content: infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]});
+										
+											i.deferUpdate();
+											collector.stop();
+										} catch (e) {
+											console.log(e);
+										}
+									}
 									if(i.user.id == curmsg.mentions.repliedUser.id){
 										switch(i.customId){
 											case "prev":
@@ -1052,9 +1159,13 @@ client.on(Events.MessageCreate, (msg) => {
 												break
 										}
 										
-										curmsg.edit({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]});
-									
-										i.deferUpdate();
+										try {
+											curmsg.edit({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]});
+										
+											i.deferUpdate();
+										} catch (e) {
+											console.log(e);
+										}
 									}
 								});
 							});
