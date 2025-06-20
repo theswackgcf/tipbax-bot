@@ -62,9 +62,9 @@ function download(url){
 let save = "{}";
 
 //ids
-const bot_id = "1214233339012063373";
-const database_channel = '1214320437706891366';
-const owner_id = '821432433491705977';
+const bot_id = process.env.BOT_ID;
+const database_channel = process.env.CHANNEL_ID;
+const owner_id = process.env.OWNER_ID;
 
 //turn json into a string and write to a file
 function string_JSON() {
@@ -185,7 +185,25 @@ client.once(Events.ClientReady, (a) => {
 		"Undertale 2",
 		"HORSE",
 		"Homer Run",
-		"Meme Run"
+		"Meme Run",
+		"Bender Ball",
+		"Bubsy In: Fractured Furry Tales (Atari Jaguar)",
+		"Cybermorph (Atari Jaguar)",
+		"The Return To Freddy's 4",
+		"Tiddlywinks",
+		"Hide and Seek",
+		"Hop Scotch",
+		"3D Pinball Space Cadet",
+		"Bop It",
+		"Superman 64",
+		"Sonic Blast",
+		"Hong Kong 1997",
+		"Kart Ride Into The Annoying Orange",
+		"Talking Tom",
+		"Big Rigs: Over the Road Racing",
+		"Elf: The Movie for the GBA",
+		"Elf Bowling",
+		"banito",
     ];
 
     let rand_act = 0;
