@@ -521,7 +521,11 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 					}
 
-					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ').replace(/@/g, '');
+					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
+					var userregex = /<@!?(\d+)>/g;
+					for(var [id, user] of msg.mentions.users) {
+						msgReply = msgReply.replace(new RegExp(`<@!?${id}>`, 'g'), user.displayName);
+					}
 
 					if(ret_string){
 						return msgReply;
