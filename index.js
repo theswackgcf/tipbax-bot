@@ -521,7 +521,7 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 					}
 
-					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
+					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ').replace(/@/g, '');
 
 					if(ret_string){
 						return msgReply;
