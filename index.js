@@ -528,7 +528,7 @@ client.on(Events.MessageCreate, (msg) => {
 					}
 
 					if(ret_string){
-						return msgReply;
+						return msgReply.slice(0, 1000);
 					} else {
 						if(reply){
 							msg.channel.sendTyping();
