@@ -12,7 +12,7 @@ console.log('server listening')
 
 //discord libraries and token
 const bot_token = process.env.TOKEN;
-const { Client, Events, GatewayIntentBits, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder } = require("discord.js");
+const { Client, Events, GatewayIntentBits, Partials, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder } = require("discord.js");
 
 //other dependencies
 const fs = require("fs");
@@ -41,7 +41,7 @@ grawlix.setDefaults({
 });
 
 let database_init = false;
-const version = "1.01";
+const version = "1.02";
 
 //download database from a url and set it to the save variable
 function download(url){
@@ -90,7 +90,9 @@ const client = new Client({
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessageReactions,
+		GatewayIntentBits.DirectMessages,
 	],
+	partials: [Partials.Channel, Partials.Message],
 });
 
 client.once(Events.ClientReady, (a) => {
@@ -226,29 +228,31 @@ let prefix = 'tipbax';
 
 client.on(Events.MessageCreate, (msg) => {
 	try {
-		//in dm
-		if(msg.channel.type == 'dm') return;
-
 		//user is not bot
 		if(!msg.author.bot){
 			if(!database_init) return;
 			var args = msg.content.toLowerCase().split(" ");
 
 			//make data
-			if(!save[msg.guild.id]){
-				save[msg.guild.id] = {
-					words: [],
-					pictures: [],
-					channels: [],
-					interval: 5,
-					listening: false,
-					talking: false,
-					reacting: false,
-					images: false,
-					markov: true,
-				};
+			let curdata = msg.channel.id;
+			if(msg.channel.type != 1){
+				curdata = msg.guild.id;
 			}
-			let cursave = save[msg.guild.id];
+			
+			if(!save[curdata]){
+					save[curdata] = {
+						words: [],
+						pictures: [],
+						channels: [],
+						interval: 5,
+						listening: false,
+						talking: false,
+						reacting: false,
+						images: false,
+						markov: true,
+					};
+				}
+			let cursave = save[curdata];
 
 			function wordWrap(str, maxWidth) {
 				var newLineStr = "\n"
@@ -500,6 +504,10 @@ client.on(Events.MessageCreate, (msg) => {
 					}
 					
 					for(var i = 0; i < finalstring.length; i++){
+						for(var [id, user] of msg.mentions.users) {
+							finalstring[i] = finalstring[i].replace(new RegExp(`<@!?${id}>`, 'g'), user.displayName);
+						}
+						
 						if(uppercase){
 							finalstring[i] = finalstring[i].toUpperCase();
 						} else {
@@ -522,10 +530,6 @@ client.on(Events.MessageCreate, (msg) => {
 					}
 
 					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
-					var userregex = /<@!?(\d+)>/g;
-					for(var [id, user] of msg.mentions.users) {
-						msgReply = msgReply.replace(new RegExp(`<@!?${id}>`, 'g'), user.displayName);
-					}
 
 					if(ret_string){
 						return msgReply.slice(0, 1000);
@@ -624,7 +628,7 @@ client.on(Events.MessageCreate, (msg) => {
 						return msg.reply("https://discord.com/oauth2/authorize?client_id=1214233339012063373&scope=bot&permissions=274878286912");
 					break;
 					case "markov":
-						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						if(msg.channel.type != 1 && !msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
 						var curmarkov = "true";
 						if(cursave.markov != undefined){
 							if(!cursave.markov){
@@ -650,7 +654,7 @@ client.on(Events.MessageCreate, (msg) => {
 						return msg.reply(`ok. markov chain generation changed to **${answer}**`);
 					break;
 					case "enable":
-						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						if(msg.channel.type != 1 && !msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
 						if(args.length == 2){
 							return msg.reply(`**enable listening/talking/reacting | all**`);
 						}
@@ -709,7 +713,7 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 					break;
 					case "disable":
-						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						if(msg.channel.type != 1 && !msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
 						if(args.length == 2){
 							return msg.reply(`**disable listening/talking/reacting | all**`);
 						}
@@ -779,6 +783,10 @@ client.on(Events.MessageCreate, (msg) => {
 					break;
 					case "dialogue":
 					case "dg":
+						var dm = false;
+						if(msg.channel.type == 1){
+							dm = true;
+						}
 						if(!cursave.talking) return msg.reply("NUH UH. can't generate a message!! use the **enable** command to let me listen to messages");
 						msg.channel.sendTyping();
 						
@@ -788,15 +796,21 @@ client.on(Events.MessageCreate, (msg) => {
 						var namearray = [];
 						
 						async function doMemberNames(){
-							for(var i = 0; i < size; i++){
-								var randmember = await msg.guild.members.fetch();
-								namearray.push(randmember.random().user.username);
+							if(!dm){
+								for(var i = 0; i < size; i++){
+									var randmember = await msg.guild.members.fetch();
+									namearray.push(randmember.random().user.username);
+								}
+							} else {
+								var user = msg.author;
+								namearray.push(client.user.displayName);
+								namearray.push(user.displayName);
 							}
 						}
 						
 						doMemberNames().then(() => {
 							for(var i = 0; i < size; i++){
-								finalstr += '**'+namearray[i]+"**: "+'"'+generate_msg(true, true, true);
+								finalstr += '**'+namearray[Math.floor(Math.random()*namearray.length)]+"**: "+'"'+generate_msg(true, true, true);
 								rand = Math.floor(Math.random()*5);
 								if(rand == 0){
 									finalstr += '?"';
@@ -814,6 +828,8 @@ client.on(Events.MessageCreate, (msg) => {
 						});
 					break;
 					case "channels":
+						if(msg.channel.type == 1) return;
+						
 						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
 						if(args.length == 2){
 							var ch_array = [];
@@ -914,7 +930,7 @@ client.on(Events.MessageCreate, (msg) => {
 						}
 					break;
 					case "interval":
-						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						if(msg.channel.type != 1 && !msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
 						if(args.length == 2){
 							return msg.reply(`**interval <number>** - set message interval (1-999).\ncurrent interval: ${cursave.interval}`);
 						}
@@ -930,9 +946,13 @@ client.on(Events.MessageCreate, (msg) => {
 						return msg.reply(`ok. changed current interval to **${num}**`);
 					break;
 					case "reset":
-						if(!msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						if(msg.channel.type != 1 && !msg.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) return msg.reply("NUH UH. you dont have the **manage channels** permission");
+						var dm = "on this server";
+						if(msg.channel.type == 1){
+							dm = "in this channel";
+						}
 						if(cursave.words.length == 0) return msg.reply("you can't do that. there are no currently saved messages");
-						msg.reply("**WARNING!!!** this will reset tipbax's collected messages on this server. are you really really sure you want to do that?").then(m => {
+						msg.reply(`**WARNING!!!** this will reset tipbax's collected messages ${dm}. are you really really sure you want to do that?`).then(m => {
 							m.react('👍');
 							var collectorFilter = (reaction, user) => {
 								return reaction.emoji.name == '👍' && user.id == msg.author.id;
@@ -1323,7 +1343,7 @@ client.on(Events.MessageCreate, (msg) => {
 
 			//generate messages on its own
 			if(!command){
-				if(save[msg.guild.id]){
+				if(save[curdata]){
 					var rand = Math.floor(Math.random() * cursave.interval);
 					if(rand == 0){
 						generate_msg(false, false, false);
