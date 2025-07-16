@@ -1136,10 +1136,19 @@ client.on(Events.MessageCreate, (msg) => {
 						
 						if(args.length == 2){
 							input = generate_msg(true, true, true).toLowerCase();
-						} else if(args.length >= 3){
+							inpadd = `**${input}:**\n`;
+						} else if(args.length == 3){
+							if(args[2].toLowerCase() == "random"){
+								input = randomTitle({words: Math.floor(Math.random() * 7)+1});
+								inpadd = "**random youtube video:**\n";
+							} else {
+								input = args.slice(2).join(" ");
+								inpadd = `**${input}:**\n`;
+							}
+						} else if(args.length > 3){
 							input = args.slice(2).join(" ");
-						}
-						inpadd = `**${input}:**\n`;
+							inpadd = `**${input}:**\n`;
+						} 
 						
 						msg.channel.sendTyping();
 						
