@@ -431,14 +431,14 @@ client.on(Events.MessageCreate, (msg) => {
 					var finalstring = [];
 					
 					//making a question
-					if(!reply && !sendfail && !ret_string){
+					/*if(!reply && !sendfail && !ret_string){
 						if(msg.content.trim().length <= 100){
 							var qchance = Math.floor(Math.random()*16);
 							if(qchance < 2){
 								finalstring[0] = msg.content.trim()+"?";
 							}
 						}
-					}
+					}*/
 					
 					for(var i = 0; i < Math.floor((Math.random()*10)+1); i++){
 						var lastword = "";
@@ -504,10 +504,6 @@ client.on(Events.MessageCreate, (msg) => {
 					}
 					
 					for(var i = 0; i < finalstring.length; i++){
-						for(var [id, user] of msg.mentions.users) {
-							finalstring[i] = finalstring[i].replace(new RegExp(`<@!?${id}>`, 'g'), user.displayName);
-						}
-						
 						if(uppercase){
 							finalstring[i] = finalstring[i].toUpperCase();
 						} else {
@@ -528,8 +524,8 @@ client.on(Events.MessageCreate, (msg) => {
 							finalstring2[i] = finalstring2[i].toLowerCase();
 						}
 					}
-
-					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ');
+					
+					msgReply = finalstring2.join(' ').replace(/@everyone/g, '@everyоne').replace(/@here/g, '@hеre').replace(/\\n/g, ' ').replace(/<(?:@(?:!|&)?|#)\d+>/g, 'some bozo');
 
 					if(ret_string){
 						return msgReply.slice(0, 1000);
@@ -1179,6 +1175,7 @@ client.on(Events.MessageCreate, (msg) => {
 								}
 								infoarray.push(`description: ${escSlash(v.description)}\n-# views: ${v.views}   ${v.timestamp}   ${ago}`);
 							});
+							if(vidsarray[curvid] == undefined || vidsarray[curvid] == "undefined" || infoarray[info] == undefined || infoarray[info] == "undefined") return msg.reply("couldn't find anything");
 							msg.reply({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]}).then(curmsg => {
 								var collector = curmsg.createMessageComponentCollector({ time: 900000 });
 								collector.on('collect', i => {
