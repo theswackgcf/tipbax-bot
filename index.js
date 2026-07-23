@@ -12,7 +12,7 @@ console.log('server listening')
 
 //discord libraries and token
 const bot_token = process.env.TOKEN;
-const { Client, Events, GatewayIntentBits, Partials, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder } = require("discord.js");
+const { Client, Events, GatewayIntentBits, Partials, ActivityType, AttachmentBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder, EmbedBuilder } = require("discord.js");
 
 //other dependencies
 const fs = require("fs");
