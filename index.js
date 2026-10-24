@@ -1175,7 +1175,7 @@ client.on(Events.MessageCreate, (msg) => {
 								}
 								infoarray.push(`description: ${escSlash(v.description)}\n-# views: ${v.views}   ${v.timestamp}   ${ago}`);
 							});
-							if(vidsarray[curvid] == undefined || vidsarray[curvid] == "undefined" || infoarray[info] == undefined || infoarray[info] == "undefined") return msg.reply("couldn't find anything");
+							if(vidsarray[curvid] == undefined || vidsarray[curvid] == "undefined" || infoarray[info] == undefined || infoarray[info] == "undefined") return msg.reply(`**${inpadd}**:\ncouldn't find anything`);
 							msg.reply({content: inpadd+vidsarray[curvid]+"\n"+infoarray[info]+`\n-# ${curvid+1}/${vidsarray.length}`, components: [row]}).then(curmsg => {
 								var collector = curmsg.createMessageComponentCollector({ time: 900000 });
 								collector.on('collect', i => {
